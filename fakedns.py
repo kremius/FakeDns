@@ -14,6 +14,7 @@ import os
 import SocketServer
 import signal
 import argparse
+import random
 
 # inspired from DNSChef
 
@@ -281,6 +282,23 @@ class NONEFOUND(DNSResponse):
         print ">> Built NONEFOUND response"
 
 
+def generate_random_ip():
+    random_ip = ''
+    for i in range(0, 3):
+        random_ip += str(random.randint(0, 255)) + '.'
+    random_ip += str(random.randint(0, 255))
+    return random_ip
+
+def generate_random_ascii():
+    return 'd=' + ''.join( [chr(random.randint(1, 255)) for i in xrange(0, 250)] )
+    #return ''
+def generate_data_by_rule(rule):
+    if rule == 'generate_ipv4':
+        return generate_random_ip()
+    if rule == 'generate_ascii':
+        return generate_random_ascii()
+    return rule 
+
 class ruleEngine:
 
     def __init__(self, file):
@@ -359,6 +377,9 @@ class ruleEngine:
                     else:
                         response_data = rule[2]
 
+                    if args.tunneling == True:
+                        response_data = generate_data_by_rule(response_data)
+
                     response = CASE[query.type](query, response_data)
                     print ">> Matched Request - " + query.dominio
                     return response.make_packet()
@@ -407,6 +428,9 @@ if __name__ == '__main__':
                         help='IP address you wish to run FakeDns with - default all', default='0.0.0.0', required=False)
     parser.add_argument('--rebind', dest='rebind', action='store_true', required=False, default=False,
                         help="Enable DNS rebinding attacks - responds with one result the first request, and another result on subsequent requests")
+
+    parser.add_argument('--tunneling', dest='tunneling', action='store_true', required=False, default=False,
+                        help="Enable DNS tunneling simulation server")
 
     args = parser.parse_args()
 
